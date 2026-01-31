@@ -11,7 +11,7 @@ A comprehensive personal health tracking dashboard that imports data from Apple 
 
 ---
 
-## 📸 Screenshots
+## 📸 OverView
 
 | Dashboard | Metrics | Sleep Analysis |
 |-----------|---------|----------------|
