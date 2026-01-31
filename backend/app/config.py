@@ -28,7 +28,16 @@ class Settings(BaseSettings):
         if url.startswith("postgresql://"):
             url = url.replace("postgresql://", "postgresql+asyncpg://", 1)
         return url
-    SYNC_DATABASE_URL: str = "postgresql://healthuser:health_secure_pass_2024@localhost:5432/healthdashboard"
+    @property
+    def SYNC_DATABASE_URL(self) -> str:
+        """Convert DATABASE_URL to sync format (remove +asyncpg if present)"""
+        url = self.DATABASE_URL
+        # Remove async driver prefix if present
+        if "+asyncpg" in url:
+            url = url.replace("postgresql+asyncpg://", "postgresql://")
+        elif url.startswith("postgresql://"):
+            pass  # Already sync format
+        return url
     DB_POOL_SIZE: int = 10
     DB_MAX_OVERFLOW: int = 20
     
