@@ -23,7 +23,7 @@ class Base(DeclarativeBase):
 
 # Async engine for FastAPI
 async_engine = create_async_engine(
-    settings.DATABASE_URL,
+    settings.ASYNC_DATABASE_URL,
     pool_size=settings.DB_POOL_SIZE,
     max_overflow=settings.DB_MAX_OVERFLOW,
     pool_pre_ping=True,

@@ -20,6 +20,14 @@ class Settings(BaseSettings):
     
     # Database
     DATABASE_URL: str = "postgresql+asyncpg://healthuser:health_secure_pass_2024@localhost:5432/healthdashboard"
+    
+    @property
+    def ASYNC_DATABASE_URL(self) -> str:
+        """Convert standard postgresql:// URL to async postgresql+asyncpg:// format"""
+        url = self.DATABASE_URL
+        if url.startswith("postgresql://"):
+            url = url.replace("postgresql://", "postgresql+asyncpg://", 1)
+        return url
     SYNC_DATABASE_URL: str = "postgresql://healthuser:health_secure_pass_2024@localhost:5432/healthdashboard"
     DB_POOL_SIZE: int = 10
     DB_MAX_OVERFLOW: int = 20
