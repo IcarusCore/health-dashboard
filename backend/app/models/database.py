@@ -96,15 +96,21 @@ def get_sync_db():
 
 
 async def init_db():
-    """Initialize database connection on startup."""
+    """Initialize database connection and create tables on startup."""
     logger.info("Initializing database connection...")
     try:
         async with async_engine.begin() as conn:
             # Test connection
             await conn.execute(text("SELECT 1"))
         logger.info("Database connection successful")
+        
+        # Create all tables if they don't exist
+        logger.info("Creating database tables if they don't exist...")
+        async with async_engine.begin() as conn:
+            await conn.run_sync(Base.metadata.create_all)
+        logger.info("Database tables ready")
     except Exception as e:
-        logger.error(f"Database connection failed: {e}")
+        logger.error(f"Database initialization failed: {e}")
         raise
 
 
