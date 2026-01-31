@@ -1,0 +1,278 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Custom base styles */
+@layer base {
+  * {
+    @apply border-dark-700;
+  }
+
+  body {
+    @apply bg-dark-950 text-dark-100 antialiased;
+    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+  }
+
+  /* Custom scrollbar */
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+
+  ::-webkit-scrollbar-track {
+    @apply bg-dark-900;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    @apply bg-dark-600 rounded-full;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    @apply bg-dark-500;
+  }
+
+  /* Selection */
+  ::selection {
+    @apply bg-primary-500/30;
+  }
+}
+
+/* Custom components */
+@layer components {
+  /* Card */
+  .card {
+    @apply bg-dark-900 border border-dark-700 rounded-xl p-6;
+  }
+
+  .card-hover {
+    @apply card transition-all duration-200 hover:border-primary-500/50 hover:shadow-glow-cyan;
+  }
+
+  /* Buttons */
+  .btn {
+    @apply px-4 py-2 rounded-lg font-medium transition-all duration-200 
+           disabled:opacity-50 disabled:cursor-not-allowed
+           focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-dark-900;
+  }
+
+  .btn-primary {
+    @apply btn bg-primary-500 text-white hover:bg-primary-600 
+           focus:ring-primary-500;
+  }
+
+  .btn-secondary {
+    @apply btn bg-dark-700 text-dark-100 hover:bg-dark-600 
+           focus:ring-dark-500;
+  }
+
+  .btn-outline {
+    @apply btn border border-dark-600 text-dark-200 hover:bg-dark-800 
+           focus:ring-dark-500;
+  }
+
+  .btn-danger {
+    @apply btn bg-error text-white hover:bg-error-dark 
+           focus:ring-error;
+  }
+
+  .btn-success {
+    @apply btn bg-success text-white hover:bg-success-dark 
+           focus:ring-success;
+  }
+
+  /* Inputs */
+  .input {
+    @apply w-full px-4 py-2 bg-dark-800 border border-dark-600 rounded-lg
+           text-dark-100 placeholder-dark-400
+           focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent
+           transition-all duration-200;
+  }
+
+  .input-error {
+    @apply input border-error focus:ring-error;
+  }
+
+  /* Labels */
+  .label {
+    @apply block text-sm font-medium text-dark-300 mb-1;
+  }
+
+  /* Badges */
+  .badge {
+    @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium;
+  }
+
+  .badge-primary {
+    @apply badge bg-primary-500/20 text-primary-400;
+  }
+
+  .badge-success {
+    @apply badge bg-success/20 text-success-light;
+  }
+
+  .badge-warning {
+    @apply badge bg-warning/20 text-warning-light;
+  }
+
+  .badge-error {
+    @apply badge bg-error/20 text-error-light;
+  }
+
+  .badge-info {
+    @apply badge bg-info/20 text-info-light;
+  }
+
+  /* Stat cards */
+  .stat-card {
+    @apply card flex flex-col;
+  }
+
+  .stat-value {
+    @apply text-3xl font-bold text-dark-50;
+  }
+
+  .stat-label {
+    @apply text-sm text-dark-400 mt-1;
+  }
+
+  .stat-change {
+    @apply text-sm mt-2 flex items-center gap-1;
+  }
+
+  .stat-change-up {
+    @apply stat-change text-success;
+  }
+
+  .stat-change-down {
+    @apply stat-change text-error;
+  }
+
+  /* Progress bar */
+  .progress-bar {
+    @apply h-2 bg-dark-700 rounded-full overflow-hidden;
+  }
+
+  .progress-bar-fill {
+    @apply h-full rounded-full transition-all duration-500 ease-out;
+  }
+
+  /* Charts container */
+  .chart-container {
+    @apply w-full h-64 md:h-80;
+  }
+
+  /* Table */
+  .table {
+    @apply w-full text-left;
+  }
+
+  .table thead {
+    @apply bg-dark-800 border-b border-dark-700;
+  }
+
+  .table th {
+    @apply px-4 py-3 text-xs font-semibold text-dark-400 uppercase tracking-wider;
+  }
+
+  .table td {
+    @apply px-4 py-3 text-sm text-dark-200;
+  }
+
+  .table tbody tr {
+    @apply border-b border-dark-800 hover:bg-dark-800/50 transition-colors;
+  }
+
+  /* Navigation */
+  .nav-link {
+    @apply flex items-center gap-3 px-4 py-2.5 rounded-lg text-dark-300 
+           hover:bg-dark-800 hover:text-dark-100 transition-all duration-200;
+  }
+
+  .nav-link-active {
+    @apply nav-link bg-primary-500/10 text-primary-400 border-l-2 border-primary-500;
+  }
+
+  /* Metric icons */
+  .metric-icon {
+    @apply p-2 rounded-lg;
+  }
+
+  .metric-icon-vitals {
+    @apply metric-icon bg-error/20 text-error-light;
+  }
+
+  .metric-icon-activity {
+    @apply metric-icon bg-success/20 text-success-light;
+  }
+
+  .metric-icon-sleep {
+    @apply metric-icon bg-info/20 text-info-light;
+  }
+
+  .metric-icon-body {
+    @apply metric-icon bg-primary-500/20 text-primary-400;
+  }
+
+  .metric-icon-nutrition {
+    @apply metric-icon bg-warning/20 text-warning-light;
+  }
+}
+
+/* Animations */
+@layer utilities {
+  .animate-in {
+    animation: animateIn 0.3s ease-out;
+  }
+
+  @keyframes animateIn {
+    from {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  /* Number animation */
+  .tabular-nums {
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+/* Recharts customization */
+.recharts-cartesian-grid-horizontal line,
+.recharts-cartesian-grid-vertical line {
+  stroke: #334155;
+}
+
+.recharts-text {
+  fill: #94a3b8;
+  font-size: 12px;
+}
+
+.recharts-tooltip-wrapper {
+  outline: none;
+}
+
+.recharts-default-tooltip {
+  background-color: #1e293b !important;
+  border: 1px solid #334155 !important;
+  border-radius: 8px !important;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3) !important;
+}
+
+.recharts-tooltip-label {
+  color: #f1f5f9 !important;
+  font-weight: 600 !important;
+  margin-bottom: 4px !important;
+}
+
+.recharts-tooltip-item {
+  color: #cbd5e1 !important;
+}
+
+.recharts-legend-item-text {
+  color: #94a3b8 !important;
+}

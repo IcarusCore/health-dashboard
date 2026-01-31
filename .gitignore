@@ -1,0 +1,59 @@
+# Dependencies
+node_modules/
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+.venv/
+
+# Build outputs
+dist/
+build/
+*.egg-info/
+.eggs/
+
+# Environment and secrets
+.env
+.env.local
+.env.*.local
+*.env
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/
+
+# Database files (local)
+*.db
+*.sqlite3
+
+# Docker volumes (don't commit data)
+postgres_data/
+redis_data/
+
+# Uploaded files
+uploads/*
+!uploads/.gitkeep
+
+# Test coverage
+.coverage
+htmlcov/
+.pytest_cache/
+
+# Temporary files
+tmp/
+temp/
+*.tmp

@@ -1,0 +1,83 @@
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: health-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-healthuser}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}
+      POSTGRES_DB: ${POSTGRES_DB:-healthdashboard}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./backend/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-healthuser} -d ${POSTGRES_DB:-healthdashboard}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - health-network
+
+  redis:
+    image: redis:7-alpine
+    container_name: health-redis
+    restart: unless-stopped
+    command: redis-server --requirepass ${REDIS_PASSWORD:-redis}
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD:-redis}", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - health-network
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: health-backend
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-healthuser}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-healthdashboard}
+      REDIS_URL: redis://:${REDIS_PASSWORD:-redis}@redis:6379/0
+      SECRET_KEY: ${SECRET_KEY:?SECRET_KEY is required}
+      ENVIRONMENT: ${ENVIRONMENT:-production}
+      DEBUG: ${DEBUG:-false}
+      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:3000}
+    volumes:
+      - ./uploads:/app/uploads
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    networks:
+      - health-network
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: health-frontend
+    restart: unless-stopped
+    ports:
+      - "3000:80"
+    depends_on:
+      - backend
+    networks:
+      - health-network
+
+volumes:
+  postgres_data:
+  redis_data:
+
+networks:
+  health-network:
+    driver: bridge

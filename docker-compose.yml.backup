@@ -1,0 +1,193 @@
+version: '3.8'
+
+services:
+  # ============================================
+  # PostgreSQL Database with TimescaleDB
+  # ============================================
+  postgres:
+    image: timescale/timescaledb:latest-pg15
+    container_name: health-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-healthdashboard}
+      POSTGRES_USER: ${POSTGRES_USER:-healthuser}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-health_secure_pass_2024}
+      PGDATA: /var/lib/postgresql/data/pgdata
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./backend/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    ports:
+      - "5432:5432"
+    networks:
+      - health-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-healthuser} -d ${POSTGRES_DB:-healthdashboard}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ============================================
+  # Redis for Caching & Task Queue
+  # ============================================
+  redis:
+    image: redis:7-alpine
+    container_name: health-redis
+    restart: unless-stopped
+    command: redis-server --appendonly yes --requirepass ${REDIS_PASSWORD:-health_redis_pass_2024}
+    volumes:
+      - redis_data:/data
+    ports:
+      - "6379:6379"
+    networks:
+      - health-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD:-health_redis_pass_2024}", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ============================================
+  # FastAPI Backend
+  # ============================================
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: health-backend
+    restart: unless-stopped
+    environment:
+      - DATABASE_URL=postgresql+asyncpg://${POSTGRES_USER:-healthuser}:${POSTGRES_PASSWORD:-health_secure_pass_2024}@postgres:5432/${POSTGRES_DB:-healthdashboard}
+      - SYNC_DATABASE_URL=postgresql://${POSTGRES_USER:-healthuser}:${POSTGRES_PASSWORD:-health_secure_pass_2024}@postgres:5432/${POSTGRES_DB:-healthdashboard}
+      - REDIS_URL=redis://:${REDIS_PASSWORD:-health_redis_pass_2024}@redis:6379/0
+      - SECRET_KEY=${SECRET_KEY:-super_secret_key_change_in_production_2024}
+      - ENVIRONMENT=${ENVIRONMENT:-development}
+      - DEBUG=${DEBUG:-true}
+      - CORS_ORIGINS=${CORS_ORIGINS:-http://localhost:3000,http://localhost:8080}
+    volumes:
+      - ./backend/app:/app/app:ro
+      - ./backend/alembic:/app/alembic:ro
+      - health_uploads:/app/uploads
+    ports:
+      - "8000:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - health-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/v1/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # ============================================
+  # Celery Worker for Background Tasks
+  # ============================================
+  celery-worker:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: health-celery-worker
+    restart: unless-stopped
+    command: celery -A app.workers.celery_app worker --loglevel=info --concurrency=2
+    environment:
+      - DATABASE_URL=postgresql+asyncpg://${POSTGRES_USER:-healthuser}:${POSTGRES_PASSWORD:-health_secure_pass_2024}@postgres:5432/${POSTGRES_DB:-healthdashboard}
+      - SYNC_DATABASE_URL=postgresql://${POSTGRES_USER:-healthuser}:${POSTGRES_PASSWORD:-health_secure_pass_2024}@postgres:5432/${POSTGRES_DB:-healthdashboard}
+      - REDIS_URL=redis://:${REDIS_PASSWORD:-health_redis_pass_2024}@redis:6379/0
+      - SECRET_KEY=${SECRET_KEY:-super_secret_key_change_in_production_2024}
+      - ENVIRONMENT=${ENVIRONMENT:-development}
+    volumes:
+      - ./backend/app:/app/app:ro
+      - health_uploads:/app/uploads
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - health-network
+
+  # ============================================
+  # Celery Beat for Scheduled Tasks
+  # ============================================
+  celery-beat:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: health-celery-beat
+    restart: unless-stopped
+    command: celery -A app.workers.celery_app beat --loglevel=info
+    environment:
+      - DATABASE_URL=postgresql+asyncpg://${POSTGRES_USER:-healthuser}:${POSTGRES_PASSWORD:-health_secure_pass_2024}@postgres:5432/${POSTGRES_DB:-healthdashboard}
+      - SYNC_DATABASE_URL=postgresql://${POSTGRES_USER:-healthuser}:${POSTGRES_PASSWORD:-health_secure_pass_2024}@postgres:5432/${POSTGRES_DB:-healthdashboard}
+      - REDIS_URL=redis://:${REDIS_PASSWORD:-health_redis_pass_2024}@redis:6379/0
+      - SECRET_KEY=${SECRET_KEY:-super_secret_key_change_in_production_2024}
+      - ENVIRONMENT=${ENVIRONMENT:-development}
+    volumes:
+      - ./backend/app:/app/app:ro
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - health-network
+
+  # ============================================
+  # React Frontend
+  # ============================================
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: health-frontend
+    restart: unless-stopped
+    environment:
+      - REACT_APP_API_URL=${REACT_APP_API_URL:-http://localhost:8000}
+    ports:
+      - "3000:80"
+    depends_on:
+      - backend
+    networks:
+      - health-network
+
+  # ============================================
+  # Nginx Reverse Proxy (Production)
+  # ============================================
+  nginx:
+    image: nginx:alpine
+    container_name: health-nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/ssl:/etc/nginx/ssl:ro
+    depends_on:
+      - backend
+      - frontend
+    networks:
+      - health-network
+    profiles:
+      - production
+
+# ============================================
+# Networks
+# ============================================
+networks:
+  health-network:
+    driver: bridge
+
+# ============================================
+# Volumes
+# ============================================
+volumes:
+  postgres_data:
+    driver: local
+  redis_data:
+    driver: local
+  health_uploads:
+    driver: local
