@@ -20,6 +20,7 @@ class MetricDefinition(Base):
     __tablename__ = "metric_definitions"
     
     id: Mapped[uuid.UUID] = mapped_column(
+        primary_key=True,
         UUID(as_uuid=True), 
         primary_key=True, 
         default=uuid.uuid4
@@ -52,10 +53,12 @@ class Measurement(Base):
     
     # Composite primary key for TimescaleDB hypertable
     id: Mapped[uuid.UUID] = mapped_column(
+        primary_key=True,
         UUID(as_uuid=True), 
         default=uuid.uuid4
     )
     user_id: Mapped[uuid.UUID] = mapped_column(
+        primary_key=True,
         UUID(as_uuid=True), 
         ForeignKey("users.id", ondelete="CASCADE"),
         nullable=False
@@ -96,11 +99,13 @@ class MetricCorrelation(Base):
     __tablename__ = "metric_correlations"
     
     id: Mapped[uuid.UUID] = mapped_column(
+        primary_key=True,
         UUID(as_uuid=True), 
         primary_key=True, 
         default=uuid.uuid4
     )
     user_id: Mapped[uuid.UUID] = mapped_column(
+        primary_key=True,
         UUID(as_uuid=True), 
         ForeignKey("users.id", ondelete="CASCADE"),
         nullable=False
