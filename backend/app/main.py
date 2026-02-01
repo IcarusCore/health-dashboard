@@ -29,6 +29,7 @@ from app.api.routes import (
     exports,
 )
 from app.models.database import init_db, close_db
+from app.utils.seed_metrics import seed_metric_definitions
 
 # Configure logging
 logging.basicConfig(
@@ -45,6 +46,11 @@ async def lifespan(app: FastAPI):
     logger.info("Starting Health Dashboard API...")
     await init_db()
     logger.info("Database connection established")
+    # Seed metric definitions
+    from app.models.database import AsyncSessionLocal
+    async with AsyncSessionLocal() as db:
+        await seed_metric_definitions(db)
+    logger.info("Metric definitions seeded")
     
     yield
     
