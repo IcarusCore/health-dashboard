@@ -5,6 +5,7 @@ Dashboard data and configuration endpoints
 """
 
 from datetime import datetime, timedelta, date
+import pytz
 from typing import Optional
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy import select, func, desc
@@ -29,7 +30,13 @@ async def get_dashboard_overview(
     db: AsyncSession = Depends(get_db),
 ):
     """Get dashboard overview data."""
-    today = date.today()
+    # Use user timezone for date calculations
+    try:
+        user_tz = pytz.timezone(current_user.timezone or "UTC")
+    except:
+        user_tz = pytz.UTC
+    now_in_user_tz = datetime.now(user_tz)
+    today = now_in_user_tz.date()
     yesterday = today - timedelta(days=1)
     week_ago = today - timedelta(days=7)
     
