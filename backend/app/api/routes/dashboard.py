@@ -190,3 +190,15 @@ async def refresh_daily_summary(
     summary = await service.calculate_daily_summary(target_date)
     
     return {"message": f"Summary refreshed for {target_date}", "summary_id": str(summary.id)}
+
+
+@router.post("/generate-summaries")
+async def generate_summaries(
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Generate daily summaries from measurements data."""
+    from app.utils.generate_summaries import generate_daily_summaries
+    
+    count = await generate_daily_summaries(db, str(current_user.id))
+    return {"message": f"Generated {count} daily summaries"}
