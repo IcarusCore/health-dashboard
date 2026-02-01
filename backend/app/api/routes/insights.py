@@ -165,3 +165,17 @@ async def dismiss_insight(
     await db.commit()
     
     return {"message": "Insight dismissed"}
+
+
+@router.post("/generate")
+async def generate_insights(
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Generate new health insights based on recent data."""
+    from app.services.insights_service import InsightsService
+    
+    service = InsightsService(db, current_user.id)
+    insights = await service.generate_insights()
+    
+    return {"message": f"Generated {len(insights)} new insights", "count": len(insights)}

@@ -37,22 +37,40 @@ class AnalyticsService:
         metric_def = def_result.scalar_one_or_none()
         display_name = metric_def.display_name if metric_def else metric_key
         
-        # Get daily aggregated values
-        result = await self.db.execute(
-            select(
-                func.date(Measurement.timestamp).label('date'),
-                func.avg(Measurement.value).label('avg_value')
+        # Handle sleep_duration specially - it's in daily_summaries, not measurements
+        if metric_key == 'sleep_duration':
+            display_name = 'Sleep Duration'
+            result = await self.db.execute(
+                select(
+                    DailySummary.date.label('date'),
+                    DailySummary.sleep_duration_hours.label('avg_value')
+                )
+                .where(
+                    DailySummary.user_id == self.user_id,
+                    DailySummary.date >= start_date.date(),
+                    DailySummary.date <= end_date.date(),
+                    DailySummary.sleep_duration_hours.isnot(None),
+                )
+                .order_by(DailySummary.date)
             )
-            .where(
-                Measurement.user_id == self.user_id,
-                Measurement.metric_key == metric_key,
-                Measurement.timestamp >= start_date,
-                Measurement.timestamp <= end_date,
+            rows = result.all()
+        else:
+            # Get daily aggregated values from measurements
+            result = await self.db.execute(
+                select(
+                    func.date(Measurement.timestamp).label('date'),
+                    func.avg(Measurement.value).label('avg_value')
+                )
+                .where(
+                    Measurement.user_id == self.user_id,
+                    Measurement.metric_key == metric_key,
+                    Measurement.timestamp >= start_date,
+                    Measurement.timestamp <= end_date,
+                )
+                .group_by(func.date(Measurement.timestamp))
+                .order_by(func.date(Measurement.timestamp))
             )
-            .group_by(func.date(Measurement.timestamp))
-            .order_by(func.date(Measurement.timestamp))
-        )
-        rows = result.all()
+            rows = result.all()
         
         if len(rows) < 2:
             return TrendAnalysis(
